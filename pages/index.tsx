@@ -14,8 +14,8 @@ import {
   getTimeZone,
   getTimeZoneOffset,
 } from "./api/geolocation";
-import Clock from "./components/clock";
-import { timezones } from "./lib/timezones";
+import Clock from "../components/clock";
+import { timezones } from "../lib/timezones";
 
 type Props = {
   ip: string;

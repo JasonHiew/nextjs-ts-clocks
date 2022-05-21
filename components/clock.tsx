@@ -30,7 +30,6 @@ const Clock: NextPage<Props> = (props) => {
     // console.log(regionDate.getTimezoneOffset());
     const interval = setInterval(() => {
       setDate(utcToZonedTime(new Date(), IANATimezone));
-      console.log("");
     }, 1000);
     return () => {
       clearInterval(interval);
