@@ -37,7 +37,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   };
 };
 
-const Home: NextPage = (props: Props) => {
+const Home: NextPage<Props> = (props) => {
   console.log(new Date().getTimezoneOffset());
 
   return (

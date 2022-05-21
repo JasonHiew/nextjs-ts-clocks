@@ -9,7 +9,7 @@ interface Props {
   offset: number;
 }
 
-const Clock: NextPage = (props: Props) => {
+const Clock: NextPage<Props> = (props) => {
   const [date, setDate] = useState(new Date());
   const [timezone, setTimezone] = useState(props.timezone);
   const [IANATimezone, setIANATimezone] = useState(props.timezone);
