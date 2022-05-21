@@ -18,9 +18,9 @@ import Clock from "./components/clock";
 import { timezones } from "./lib/timezones";
 
 type Props = {
-  ip?: string;
-  timezone?: string;
-  offset?: number;
+  ip: string;
+  timezone: string;
+  offset: number;
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
