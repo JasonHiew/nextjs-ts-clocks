@@ -151,9 +151,9 @@ const Home: NextPage<Props> = (props) => {
                   <li>-Tailwind CSS</li>
                   <li>-Typescript</li>
                   <li>-React (Hooks)</li>
-                  <li>-->useCallback</li>
-                  <li>-->useEffect</li>
-                  <li>-->useDeferredValue</li>
+                  <li>---useCallback</li>
+                  <li>---useEffect</li>
+                  <li>---useDeferredValue</li>
                   <li>-ipgeolocation.io</li>
                   <li>-axios</li>
                   <li>-date-fns</li>
@@ -161,7 +161,6 @@ const Home: NextPage<Props> = (props) => {
                   <li>-uuid</li>
                   <li>-localStorage for persistent states</li>
                 </ul>
-                
               </code>
             </div>
           </div>
