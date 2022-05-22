@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useDeferredValue,
+  useEffect,
+  useState,
+} from "react";
 import type { NextPage } from "next";
 import { timezones } from "../lib/timezones";
-import { addSeconds, compareAsc, format } from "date-fns";
-import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { format } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 
 interface Props {
+  id: string;
   timezone: string;
+  longTimezone: string;
   offset: number;
+  handleUpdate: (id: string, timezone: string, longTimezone: string, offset: number) => void;
 }
 
 const Clock: NextPage<Props> = (props) => {
+  const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(new Date());
-  const [timezone, setTimezone] = useState(props.timezone);
+  const deferredDate = useDeferredValue(date);
+  const [timezone, setTimezone] = useState(props.longTimezone);
   const [IANATimezone, setIANATimezone] = useState(props.timezone);
   const [offset, setOffset] = useState(props.offset);
 
@@ -22,12 +31,14 @@ const Clock: NextPage<Props> = (props) => {
     setOffset(timezones[idx].offset);
   };
 
-  let utc = zonedTimeToUtc(new Date(), timezone);
-  // let regionDate = utcToZonedTime(utc, IANATimezone);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1);
+  }, []);
 
   useEffect(() => {
-    let regionDate = utcToZonedTime(new Date(), IANATimezone);
-    // console.log(regionDate.getTimezoneOffset());
+    props.handleUpdate(props.id, IANATimezone, timezone, offset);
     const interval = setInterval(() => {
       setDate(utcToZonedTime(new Date(), IANATimezone));
     }, 1000);
@@ -41,27 +52,27 @@ const Clock: NextPage<Props> = (props) => {
       <div className="mb-5">
         <h3 className="text-xl">Time Zone: </h3>
         <h3 className="text-xl text-ellipsis font-bold h-12">
-          (UTC{offset > 0 ? ` +${offset}` : ` ${offset}`}) {timezone}
+          {offset == 0 ? `UTC` : offset > 0 ? `(UTC+${offset}) ${timezone}` : `(UTC${offset}) ${timezone}`}
         </h3>
       </div>
       <div className="grid grid-cols-11 grid-rows-2 gap-1 items-center justify-center">
         <h1 className="col-span-11 py-5 h-15 bg-black text-white text-center text-4xl rounded-xl">
-          {format(date, "eeeeeeee")}
+          {!loading ? format(deferredDate, "eeeeeeee") : "-"}
         </h1>
         <h1 className="row-start-2 col-span-3 py-5 h-15 bg-black text-white text-center text-4xl rounded-xl">
-          {format(date, "H")}
+          {!loading ? format(deferredDate, "H") : "00"}
         </h1>
         <h1 className="row-start-2 col-span-1 py-5 h-15 text-black font-extrabold text-center text-4xl rounded-xl">
           :
         </h1>
         <h1 className=" row-start-2 col-span-3 py-5 h-15 bg-black text-white text-center text-4xl rounded-xl">
-          {format(date, "mm")}
+          {!loading ? format(deferredDate, "mm") : "00"}
         </h1>
         <h1 className="row-start-2 col-span-1 py-5 h-15 text-black font-extrabold text-center text-4xl rounded-xl">
           :
         </h1>
         <h1 className="row-start-2 col-span-3 py-5 h-15 bg-black text-white text-center text-4xl rounded-xl">
-          {format(date, "ss")}
+          {!loading ? format(deferredDate, "ss") : "00"}
         </h1>
       </div>
       <select

@@ -1,13 +1,7 @@
-import axios from "axios";
-import type {
-  GetServerSideProps,
-  InferGetServerSidePropsType,
-  NextPage,
-} from "next";
+import type { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import { stringify } from "querystring";
-import { Suspense } from "react";
+import { useCallback, useEffect } from "react";
 import styles from "../styles/Home.module.css";
 import {
   getIPAddress,
@@ -15,7 +9,8 @@ import {
   getTimeZoneOffset,
 } from "./api/geolocation";
 import Clock from "../components/clock";
-import { timezones } from "../lib/timezones";
+import { useImmer } from "use-immer";
+import { v1 as uuidv1 } from "uuid";
 
 type Props = {
   ip: string;
@@ -23,22 +18,91 @@ type Props = {
   offset: number;
 };
 
+type ItemType = {
+  id: string;
+  timezone: string;
+  longTimezone: string;
+  offset: number;
+}[];
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const ip = await getIPAddress();
   const timezone = await getTimeZone();
   const offset = await getTimeZoneOffset();
-  // const offset = parseInt(offset_str, 10);
-
-  // console.log(offset)
-  // console.log(ip, timezone);
-  // console.log(timezones);
   return {
     props: { ip, timezone, offset }, // will be passed to the page component as props
   };
 };
 
 const Home: NextPage<Props> = (props) => {
-  console.log(new Date().getTimezoneOffset());
+  const [items, setItems] = useImmer<ItemType>([]);
+  const [debug, toggleDebug] = useImmer<boolean>(false);
+  const [info, toggleInfo] = useImmer<boolean>(false);
+
+  useEffect(() => {
+    const storageItems = JSON.parse(localStorage.getItem("items") || "[]");
+    setTimeout(() => {
+      if (storageItems) {
+        setItems(storageItems);
+      }
+    }, 1);
+  }, []);
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (items) {
+        localStorage.setItem("items", JSON.stringify(items));
+        debug && console.log(items);
+      }
+    }, 1);
+  }, [items]);
+
+  const handleAdd = useCallback(() => {
+    setItems((draft) => {
+      draft.push({
+        id: uuidv1(),
+        timezone: "UTC",
+        longTimezone: "UTC",
+        offset: 0,
+      });
+    });
+  }, []);
+
+  const handleUpdate = useCallback(
+    (id: string, timezone: string, longTimezone: string, offset: number) => {
+      setItems((draft) => {
+        const index = draft.findIndex((items) => items.id === id);
+        if (index !== -1) {
+          draft[index].timezone = timezone;
+          draft[index].longTimezone = longTimezone;
+          draft[index].offset = offset;
+        }
+      });
+    },
+    []
+  );
+
+  const handleDelete = useCallback((id: string) => {
+    setItems((draft) => {
+      const index = draft.findIndex((items) => items.id === id);
+      if (index !== -1) draft.splice(index, 1);
+    });
+  }, []);
+
+  const handleDeleteAll = () => {
+    setItems([
+      { id: "default", timezone: "UTC", longTimezone: "UTC", offset: 0 },
+    ]);
+    localStorage.removeItem("items");
+  };
+
+  const handleToggleDebug = () => {
+    toggleDebug((value) => !value);
+  };
+
+  const handleToggleInfo = () => {
+    toggleInfo((value) => !value);
+  };
 
   return (
     <div className={styles.container}>
@@ -49,7 +113,9 @@ const Home: NextPage<Props> = (props) => {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>Clocks!</h1>
+        <div className="flex">
+          <h1 className={styles.title}>Clocks!</h1>
+        </div>
 
         <p className={styles.description}>
           Your IP is <code className={styles.code}>{props.ip}</code>
@@ -60,50 +126,130 @@ const Home: NextPage<Props> = (props) => {
           <code className={styles.code}>{props.timezone}</code>
         </p>
 
-        <div className={styles.grid}>
-          <div className={styles.card}>
-            <h2>UTC Clock&rarr;</h2>
-            <Clock timezone="UTC" offset={0} />
+        {debug && (
+          <div className={`container max-w-xs md:max-w-fit mx-3`}>
+            <h2 className={`${styles.description} text-center`}>
+              LocalStorage Contents:
+            </h2>
+            <pre className="h-64 overflow-y-auto">
+              <code className={`${styles.code}`}>
+                {JSON.stringify(items, null, 2)}
+              </code>
+            </pre>
           </div>
-          <div className={styles.card}>
-            <h2>Clock 1&rarr;</h2>
-            <Clock timezone={props.timezone} offset={props.offset} />
-          </div>
+        )}
 
-          {/* <div className={styles.card}>
-            <h2>Clock 1&rarr;</h2>
-            <Suspense fallback={<div>Loading...</div>}>
-              <Clock timezone={props.timezone} offset={props.offset}/>
-            </Suspense>
+        {info && (
+          <div className={`container max-w-xs md:max-w-fit mx-3`}>
+            <h2 className={`${styles.description} text-center`}>
+              Tools used:
+            </h2>
+            <div className="h-64 overflow-y-auto">
+              <code className={`${styles.code}`}>
+                <ul>
+                  <li>-Next.js</li>
+                  <li>-Tailwind CSS</li>
+                  <li>-Typescript</li>
+                  <li>-React (Hooks)</li>
+                  <li>-->useCallback</li>
+                  <li>-->useEffect</li>
+                  <li>-->useDeferredValue</li>
+                  <li>-ipgeolocation.io</li>
+                  <li>-axios</li>
+                  <li>-date-fns</li>
+                  <li>-immer</li>
+                  <li>-uuid</li>
+                  <li>-localStorage for persistent states</li>
+                </ul>
+                
+              </code>
+            </div>
           </div>
+        )}
 
-          <div className={styles.card}>
-            <h2>Clock 1&rarr;</h2>
-            <Suspense fallback={<div>Loading...</div>}>
-              <Clock timezone={props.timezone} offset={props.offset}/>
-            </Suspense>
-          </div>
+        <div className="flex justify-center w-full mt-5">
+          <button
+            className="border-black border-2 rounded-lg p-2"
+            onClick={handleAdd}
+          >
+            Add Clock
+          </button>
+          <button
+            className="border-black border-2 rounded-lg p-2 ml-3"
+            onClick={() => handleDeleteAll()}
+          >
+            Clear All Clocks
+          </button>
+          <button
+            className="border-black border-2 rounded-lg p-2 ml-3"
+            onClick={handleToggleDebug}
+          >
+            Debug
+          </button>
+          <button
+            className="border-black border-2 rounded-lg p-2 ml-3"
+            onClick={handleToggleInfo}
+          >
+            More Info
+          </button>
+        </div>
 
-          <div className={styles.card}>
-            <h2>Clock 1&rarr;</h2>
-            <Suspense fallback={<div>Loading...</div>}>
-              <Clock timezone={props.timezone} offset={props.offset}/>
-            </Suspense>
-          </div> */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 grid-flow-row">
+          <>
+            {items.map((item, idx) => {
+              return (
+                <div className={styles.card} key={`card-${idx}`}>
+                  <div className="flex justify-between">
+                    <span>Clock {idx + 1} &rarr;</span>
+                    <button
+                      className="h-[1.75rem] w-[1.75rem] align-middle border-2 border-solid rounded-full border-gray-200 hover:border-red-600 text-red-500 hover:text-red-600"
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      X
+                    </button>
+                  </div>
+                  {debug && item.id}
+                  <Clock
+                    id={item.id}
+                    timezone={item.timezone}
+                    longTimezone={item.longTimezone}
+                    offset={item.offset}
+                    handleUpdate={handleUpdate}
+                  />
+                </div>
+              );
+            })}
+            {/* <div className={styles.card}>
+              <h2>UTC Clock&rarr;</h2>
+              <Clock timezone="UTC" offset={0} />
+            </div> */}
+
+            {/* <div className={styles.card}>
+              <h2>Clock 1&rarr;</h2>
+              <Clock timezone={props.timezone} offset={props.offset} />
+            </div> */}
+          </>
         </div>
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <div>
           Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
-        </a>
+        </div>
+        <span className="mx-5">|</span>
+        <div>
+          <span className={styles.logo}>
+            <a
+              className="!inline-block !align-middle"
+              href="https://jason-devs.me"
+            >
+              Created by Jason Hiew
+            </a>
+          </span>
+        </div>
       </footer>
     </div>
   );
