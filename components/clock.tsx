@@ -31,6 +31,10 @@ const Clock: NextPage<Props> = (props) => {
     setOffset(timezones[idx].offset);
   };
 
+  const refreshClock = () => {
+    setDate(utcToZonedTime(new Date(), IANATimezone));
+  };
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -39,9 +43,7 @@ const Clock: NextPage<Props> = (props) => {
 
   useEffect(() => {
     props.handleUpdate(props.id, IANATimezone, timezone, offset);
-    const interval = setInterval(() => {
-      setDate(utcToZonedTime(new Date(), IANATimezone));
-    }, 1000);
+    const interval = setInterval(refreshClock, 1000);
     return () => {
       clearInterval(interval);
     };
